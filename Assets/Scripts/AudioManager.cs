@@ -11,18 +11,11 @@ public class AudioManager : MonoBehaviour
 
     private AudioSource m_AudioSource;
 
-    void Awake()
+    private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            m_AudioSource = GetComponent<AudioSource>();
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        m_AudioSource = GetComponent<AudioSource>();
     }
 
     public void PlayFlipSound()

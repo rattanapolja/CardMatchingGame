@@ -12,7 +12,7 @@ public class Card : MonoBehaviour
 
     private Sprite m_FaceUpSprite;
 
-    private bool m_IsFaceUp = false;
+    public bool IsFaceUp = false;
 
     private void Awake()
     {
@@ -23,7 +23,7 @@ public class Card : MonoBehaviour
     {
         m_FaceUpSprite = sprite;
         m_CardBtn.image.sprite = m_FaceUpSprite;
-        m_IsFaceUp = true;
+        IsFaceUp = true;
     }
 
     public Sprite GetCardFace()
@@ -33,7 +33,7 @@ public class Card : MonoBehaviour
 
     public void OnClick()
     {
-        if (!m_IsFaceUp)
+        if (!IsFaceUp)
         {
             FlipCard(() => OnCardSelected?.Invoke(this));
         }
@@ -43,8 +43,8 @@ public class Card : MonoBehaviour
     {
         transform.DORotate(new Vector3(0, 90, 0), 0.25f).OnComplete(() =>
         {
-            m_IsFaceUp = !m_IsFaceUp;
-            m_CardBtn.image.sprite = m_IsFaceUp ? m_FaceUpSprite : m_FaceDownSprite;
+            IsFaceUp = !IsFaceUp;
+            m_CardBtn.image.sprite = IsFaceUp ? m_FaceUpSprite : m_FaceDownSprite;
             transform.DORotate(new Vector3(0, 0, 0), 0.25f).OnComplete(onComplete);
         });
     }
@@ -53,7 +53,7 @@ public class Card : MonoBehaviour
     {
         m_FaceUpSprite = null;
         m_CardBtn.image.sprite = m_FaceDownSprite;
-        m_IsFaceUp = false;
+        IsFaceUp = false;
         OnCardSelected.RemoveAllListeners();
     }
 }
