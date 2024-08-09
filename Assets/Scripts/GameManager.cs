@@ -146,4 +146,34 @@ public class GameManager : MonoBehaviour
         m_Columns = int.Parse(m_ColumnInputField.text);
         SetupGame();
     }
+
+    public void SaveGame()
+    {
+        GameData data = new GameData
+        {
+            score = m_Score,
+            rows = m_Rows,
+            columns = m_Columns,
+        };
+
+        SaveSystem.SaveGame(data);
+    }
+
+    public void LoadGame()
+    {
+        GameData data = SaveSystem.LoadGame();
+
+        if (data != null)
+        {
+            m_Score = data.score;
+            m_Rows = data.rows;
+            m_Columns = data.columns;
+            SetupGame();
+        }
+        else
+        {
+            SetupGame();
+        }
+    }
+
 }
