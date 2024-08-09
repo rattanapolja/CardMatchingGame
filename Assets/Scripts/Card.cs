@@ -10,17 +10,26 @@ public class Card : MonoBehaviour
 
     public UnityEvent<Card> OnCardSelected;
 
+    private CardData m_CardData;
+    public CardData GetCardData { get => m_CardData; set => m_CardData = value; }
+
     private Sprite m_FaceUpSprite;
 
     public bool IsFaceUp = false;
+
 
     private void Awake()
     {
         m_CardBtn.onClick.AddListener(OnClick);
     }
 
-    public void Init(Sprite sprite)
+    public void Init(Sprite sprite,int cardIndex, int index)
     {
+        m_CardData = new()
+        {
+            SpriteIndex = index,
+            CardIndex = cardIndex
+        };
         m_FaceUpSprite = sprite;
         m_CardBtn.image.sprite = m_FaceUpSprite;
         IsFaceUp = true;
@@ -29,6 +38,12 @@ public class Card : MonoBehaviour
     public Sprite GetCardFace()
     {
         return m_FaceUpSprite;
+    }
+
+    public void SetFaceUp(bool isFaceUp)
+    {
+        IsFaceUp = isFaceUp;
+        m_CardBtn.image.sprite = IsFaceUp ? m_FaceUpSprite : m_FaceDownSprite; ;
     }
 
     public void OnClick()
@@ -43,7 +58,7 @@ public class Card : MonoBehaviour
     {
         transform.DORotate(new Vector3(0, 90, 0), 0.25f).OnComplete(() =>
         {
-            IsFaceUp = !IsFaceUp;
+            m_CardData.IsFaceUp = IsFaceUp = !IsFaceUp;
             m_CardBtn.image.sprite = IsFaceUp ? m_FaceUpSprite : m_FaceDownSprite;
             transform.DORotate(new Vector3(0, 0, 0), 0.25f).OnComplete(onComplete);
         });
@@ -53,7 +68,7 @@ public class Card : MonoBehaviour
     {
         m_FaceUpSprite = null;
         m_CardBtn.image.sprite = m_FaceDownSprite;
-        IsFaceUp = false;
+        m_CardData.IsFaceUp = IsFaceUp = false;
         OnCardSelected.RemoveAllListeners();
     }
 }

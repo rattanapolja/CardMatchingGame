@@ -26,6 +26,8 @@ public class GameManager : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private Button m_StartBtn;
+    [SerializeField] private Button m_LoadBtn;
+    [SerializeField] private Button m_SaveBtn;
     [SerializeField] private TMP_Text m_WinLoseText;
     [SerializeField] private TMP_Text m_FinalScoreText;
     [SerializeField] private TMP_InputField m_RowInputField;
@@ -40,6 +42,8 @@ public class GameManager : MonoBehaviour
 
     private List<Card> m_CardList = new();
     private Queue<Card> m_CardQueue = new();
+
+    private GameData m_GameData;
 
     private int m_Score = 0;
     private int m_Turn = 0;
@@ -58,6 +62,11 @@ public class GameManager : MonoBehaviour
         m_RowInputField.onEndEdit.AddListener(OnRowInputFieldChanged);
         m_ColumnInputField.onEndEdit.AddListener(OnColumnInputFieldChanged);
         m_StartBtn.onClick.AddListener(OnClickStart);
+        m_LoadBtn.onClick.AddListener(OnClickLoadGame);
+        m_SaveBtn.onClick.AddListener(OnClickSaveGame);
+
+        m_GameData = SaveSystem.LoadGame();
+        m_LoadBtn.interactable = m_GameData != null;
     }
 
     private void OnRowInputFieldChanged(string text)
@@ -102,6 +111,9 @@ public class GameManager : MonoBehaviour
 
     private void OnClickStart()
     {
+        m_SaveBtn.interactable = true;
+        m_LoadBtn.interactable = true;
+
         m_GameSetupPanel.SetActive(false);
         m_GameScorePanel.SetActive(true);
         m_WinLosePanel.SetActive(false);
@@ -153,7 +165,7 @@ public class GameManager : MonoBehaviour
         int numberOfCardTypes = m_Columns * m_Rows;
 
         List<int> indices = new();
-        for (int i = 0; i < 25; i++)
+        for (int i = 0; i < m_CardSpriteList.Count; i++)
         {
             indices.Add(i);
         }
@@ -171,7 +183,8 @@ public class GameManager : MonoBehaviour
         {
             Card card = m_CardPool.GetCard();
             card.transform.SetParent(m_CardContentLayout.transform, false);
-            card.Init(cardSprites[i]);
+
+            card.Init(cardSprites[i], i, m_CardSpriteList.IndexOf(cardSprites[i]));
             card.OnCardSelected.AddListener(OnCardSelected);
             m_CardList.Add(card);
         }
@@ -298,6 +311,7 @@ public class GameManager : MonoBehaviour
 
     private void DisplayWinScreen(bool isWin)
     {
+        m_SaveBtn.interactable = false;
         AudioManager.Instance.PlayGameOverSound();
         m_BlockerPanel.SetActive(true);
         m_WinLosePanel.SetActive(true);
@@ -330,31 +344,102 @@ public class GameManager : MonoBehaviour
         m_ScoreText.text = "Score: " + m_Score;
     }
 
-    public void SaveGame()
+    public void OnClickSaveGame()
     {
         GameData data = new()
         {
-            score = m_Score,
-            rows = m_Rows,
-            columns = m_Columns,
+            Score = m_Score,
+            Rows = m_Rows,
+            Columns = m_Columns,
+            ComboCount = m_ComboCount,
+            MaxCombo = m_MaxCombo,
+            MisMatchStack = m_MisMatchStack,
+            cards = new List<CardData>(),
+            QueueList = new List<int>()
         };
+
+        for (int i = 0; i < m_CardList.Count; i++)
+        {
+            Card card = m_CardList[i];
+            int spriteIndex = m_CardSpriteList.IndexOf(card.GetCardFace());
+
+            CardData cardData = new()
+            {
+                SpriteIndex = spriteIndex,
+                IsFaceUp = card.IsFaceUp
+            };
+            data.cards.Add(cardData);
+        }
+
+        foreach (Card card in m_CardQueue)
+        {
+            data.QueueList.Add(card.GetCardData.CardIndex);
+        }
+
         SaveSystem.SaveGame(data);
     }
 
-    public void LoadGame()
+    public void OnClickLoadGame()
     {
         GameData data = SaveSystem.LoadGame();
 
         if (data != null)
         {
-            m_Score = data.score;
-            m_Rows = data.rows;
-            m_Columns = data.columns;
-            SetupGame();
+            m_GameSetupPanel.SetActive(false);
+            m_GameScorePanel.SetActive(true);
+            m_WinLosePanel.SetActive(false);
+            m_BlockerPanel.SetActive(false);
+
+            m_Score = data.Score;
+            m_Rows = data.Rows;
+            m_Columns = data.Columns;
+            m_ComboCount = data.ComboCount;
+            m_MaxCombo = data.MaxCombo;
+            m_MisMatchStack = data.MisMatchStack;
+
+            m_ScoreText.text = m_Score.ToString();
+            m_RowInputField.text = m_Rows.ToString();
+            m_ColumnInputField.text = m_Columns.ToString();
+            m_ComboText.text = m_ComboCount.ToString();
+            m_MisMatchStackText.text = m_MisMatchStack.ToString();
+
+            UpdateCombo();
+            AdjustRowsAndColumns();
+            ClearExistingCards();
+
+            m_CardContentLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            m_CardContentLayout.constraintCount = m_Columns;
+
+            UpdateCardSize();
+
+            for (int i = 0; i < data.cards.Count; i++)
+            {
+                CardData cardData = data.cards[i];
+                Card card = m_CardPool.GetCard();
+                card.transform.SetParent(m_CardContentLayout.transform, false);
+                if (cardData.SpriteIndex >= 0 && cardData.SpriteIndex < m_CardSpriteList.Count)
+                {
+                    card.Init(m_CardSpriteList[cardData.SpriteIndex], i, cardData.SpriteIndex);
+                }
+                card.SetFaceUp(cardData.IsFaceUp);
+                card.OnCardSelected.AddListener(OnCardSelected);
+                m_CardList.Add(card);
+            }
+
+            foreach (int index in data.QueueList)
+            {
+                m_CardQueue.Enqueue(m_CardList[index]);
+            }
         }
         else
         {
-            SetupGame();
+            OnClickStart();
         }
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (m_SaveBtn.interactable)
+            OnClickSaveGame();
     }
 }

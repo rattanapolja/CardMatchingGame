@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.IO;
+using System.Collections.Generic;
 
 public static class SaveSystem
 {
@@ -26,7 +27,20 @@ public static class SaveSystem
 [System.Serializable]
 public class GameData
 {
-    public int score;
-    public int rows;
-    public int columns;
+    public int Score;
+    public int Rows;
+    public int Columns;
+    public int ComboCount;
+    public int MaxCombo;
+    public int MisMatchStack;
+    public List<CardData> cards;
+    public List<int> QueueList;
+}
+
+[System.Serializable]
+public class CardData
+{
+    public int CardIndex;
+    public int SpriteIndex;
+    public bool IsFaceUp;
 }
