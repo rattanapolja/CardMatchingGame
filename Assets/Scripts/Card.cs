@@ -1,27 +1,29 @@
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class Card : MonoBehaviour
 {
-    [SerializeField] private Sprite m_FaceUpSprite;
+    [SerializeField] private Button m_CardBtn;
     [SerializeField] private Sprite m_FaceDownSprite;
 
     public UnityEvent<Card> OnCardSelected;
 
-    private SpriteRenderer m_SpriteRenderer;
+    private Sprite m_FaceUpSprite;
+
     private bool m_IsFaceUp = false;
 
-    private void Start()
+    private void Awake()
     {
-        m_SpriteRenderer = GetComponent<SpriteRenderer>();
+        m_CardBtn.onClick.AddListener(OnClick);
     }
 
     public void Init(Sprite sprite)
     {
         m_FaceUpSprite = sprite;
-        m_SpriteRenderer.sprite = m_FaceDownSprite;
-        m_IsFaceUp = false;
+        m_CardBtn.image.sprite = m_FaceUpSprite;
+        m_IsFaceUp = true;
     }
 
     public Sprite GetCardFace()
@@ -29,7 +31,7 @@ public class Card : MonoBehaviour
         return m_FaceUpSprite;
     }
 
-    public void OnMouseDown()
+    public void OnClick()
     {
         if (!m_IsFaceUp)
         {
@@ -42,8 +44,16 @@ public class Card : MonoBehaviour
         transform.DORotate(new Vector3(0, 90, 0), 0.25f).OnComplete(() =>
         {
             m_IsFaceUp = !m_IsFaceUp;
-            m_SpriteRenderer.sprite = m_IsFaceUp ? m_FaceUpSprite : m_FaceDownSprite;
+            m_CardBtn.image.sprite = m_IsFaceUp ? m_FaceUpSprite : m_FaceDownSprite;
             transform.DORotate(new Vector3(0, 0, 0), 0.25f).OnComplete(onComplete);
         });
+    }
+
+    public void Reset()
+    {
+        m_FaceUpSprite = null;
+        m_CardBtn.image.sprite = m_FaceDownSprite;
+        m_IsFaceUp = false;
+        OnCardSelected.RemoveAllListeners();
     }
 }
